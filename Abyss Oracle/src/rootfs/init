@@ -1,0 +1,36 @@
+#!/bin/sh
+mount -t proc none /proc
+mount -t sysfs none /sys
+mount -t devtmpfs devtmpfs /dev
+mount -t tmpfs tmpfs /tmp
+
+echo 2 > /proc/sys/kernel/kptr_restrict
+echo 1 > /proc/sys/kernel/dmesg_restrict
+echo 1 > /proc/sys/kernel/unprivileged_bpf_disabled 2>/dev/null || true
+echo 4 > /proc/sys/kernel/perf_event_paranoid 2>/dev/null || true
+echo 2 > /proc/sys/kernel/yama/ptrace_scope 2>/dev/null || true
+echo 0 > /proc/sys/vm/unprivileged_userfaultfd 2>/dev/null || true
+echo 0 > /proc/sys/kernel/unprivileged_userns_clone 2>/dev/null || true
+
+insmod /abyss_oracle.ko
+chmod 666 /dev/abyss_oracle
+
+mkdir -p /home/ctf
+chown 1000:1000 /home/ctf
+chmod 700 /home/ctf
+
+if [ ! -f /flag ]; then
+	echo "instance configuration error"
+	poweroff -f
+fi
+
+chown 0:0 /flag
+chmod 400 /flag
+
+if [ ! -x /home/ctf/exploit ]; then
+	echo "instance configuration error"
+	poweroff -f
+fi
+
+setsid cttyhack /bin/dropper
+poweroff -f
